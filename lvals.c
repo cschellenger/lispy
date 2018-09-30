@@ -2,10 +2,11 @@
 
 char* ltype_name(int t) {
   switch (t) {
-  case LVAL_FUN: return "Function";
-  case LVAL_NUM: return "Number";
-  case LVAL_ERR: return "Error";
-  case LVAL_SYM: return "Symbol";
+  case LVAL_FUN:   return "Function";
+  case LVAL_NUM:   return "Number";
+  case LVAL_BOOL:  return "Boolean";
+  case LVAL_ERR:   return "Error";
+  case LVAL_SYM:   return "Symbol";
   case LVAL_SEXPR: return "S-Expression";
   case LVAL_QEXPR: return "Q-Expression";
   default: return "Unknown";
@@ -18,6 +19,7 @@ int lval_eq(lval* x, lval* y) {
   }
 
   switch(x->type) {
+  case LVAL_BOOL:
   case LVAL_NUM: return x->num == y->num;
   case LVAL_ERR: return (strcmp(x->err, y->err) == 0);
   case LVAL_SYM: return (strcmp(x->sym, y->sym) == 0);
@@ -49,6 +51,13 @@ lval* lval_num(long x) {
   lval* v = malloc(sizeof(lval));
   v->type = LVAL_NUM;
   v->num = x;
+  return v;
+}
+
+lval* lval_bool(int b) {
+  lval* v = malloc(sizeof(lval));
+  v->type = LVAL_BOOL;
+  v->num = b;
   return v;
 }
 
@@ -102,7 +111,10 @@ lval* lval_qexpr(void) {
 
 void lval_del(lval* v) {
   switch (v->type) {
+
+  case LVAL_BOOL:
   case LVAL_NUM: break;
+
   case LVAL_ERR: free(v->err); break;
   case LVAL_SYM: free(v->sym); break;
   case LVAL_FUN:
@@ -215,6 +227,16 @@ lval* lval_read_num(mpc_ast_t* t) {
   return errno != ERANGE ? lval_num(x) : lval_err("invalid number");
 }
 
+lval* lval_read_bool(mpc_ast_t* t) {
+  if (strcmp(t->contents, "true") == 0) {
+    return lval_bool(1);
+  }
+  if (strcmp(t->contents, "false") == 0) {
+    return lval_bool(0);
+  }
+  return lval_err("Unable to parse boolean value: %s", t->contents);
+}
+
 lval* lval_add(lval* v, lval* x) {
   v->count++;
   v->cell = realloc(v->cell, sizeof(lval*) * v->count);
@@ -239,6 +261,9 @@ lval* lval_read(mpc_ast_t* t) {
   /* Handle symbols and numbers */
   if (strstr(t->tag, "number")) {
     return lval_read_num(t);
+  }
+  if (strstr(t->tag, "bool")) {
+    return lval_read_bool(t);
   }
   if (strstr(t->tag, "symbol")) {
     return lval_sym(t->contents);
@@ -292,6 +317,7 @@ void lval_expr_print(lval* v, char open, char close) {
 void lval_print(lval* v) {
   switch (v->type) {
   case LVAL_NUM: printf("%li", v->num); break;
+  case LVAL_BOOL: printf("%s", v->num ? "true" : "false"); break;
   case LVAL_ERR: printf("Error: %s", v->err); break;
   case LVAL_SYM: printf("%s", v->sym); break;
   case LVAL_SEXPR: lval_expr_print(v, '(', ')'); break;
@@ -327,6 +353,7 @@ lval* lval_copy(lval* v) {
     }
     break;
 
+  case LVAL_BOOL:
   case LVAL_NUM:
     x->num = v->num;
     break;

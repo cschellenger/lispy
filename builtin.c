@@ -5,16 +5,17 @@ lval* builtin_var(lenv* e, lval* a, char* func) {
   lval* syms = a->cell[0];
   for (int i = 0; i < syms->count; i++) {
     LASSERT(a, (syms->cell[i]->type == LVAL_SYM),
-	    "Function '%s' cannot define non-symbol. Got %s, Expected %s",
-	    ltype_name(syms->cell[i]->type),
-	    ltype_name(LVAL_SYM));
+            "Function '%s' cannot redefine non-symbol. Got %s, Expected %s",
+            func,
+            ltype_name(syms->cell[i]->type),
+            ltype_name(LVAL_SYM));
   }
 
   LASSERT(a, (syms->count == a->count - 1),
-	  "Function '%s' passed too many arguments for symbols. Got %i, Expected %i",
-	  func,
-	  syms->count,
-	  a->count - 1);
+         "Function '%s' passed too many arguments for symbols. Got %i, Expected %i",
+         func,
+         syms->count,
+         a->count - 1);
 
   for (int i = 0; i < syms->count; i++) {
     /* define 'def' globally */
@@ -55,7 +56,7 @@ lval* builtin_fun(lenv* e, lval* a) {
 lval* builtin_if(lenv* e, lval* a) {
   LASSERT_NUM("if", a, 3);
   /* first arg must be condition */
-  LASSERT_TYPE("if", a, 0, LVAL_NUM);
+  LASSERT_TYPE("if", a, 0, LVAL_BOOL);
   /* true branch */
   LASSERT_TYPE("if", a, 1, LVAL_QEXPR);
   /* false branch */
@@ -75,7 +76,7 @@ lval* builtin_if(lenv* e, lval* a) {
 
 lval* builtin_and(lenv* e, lval* a) {
   for (int i = 0; i < a->count; i++) {
-    LASSERT_TYPE("&&", a, i, LVAL_NUM);
+    LASSERT_TYPE("&&", a, i, LVAL_BOOL);
   }
   int r = 1;
   for (int i = 0; i < a->count; i++) {
@@ -85,12 +86,12 @@ lval* builtin_and(lenv* e, lval* a) {
     }
   }
   lval_del(a);
-  return lval_num(r);
+  return lval_bool(r);
 }
 
 lval* builtin_or(lenv* e, lval* a) {
   for (int i = 0; i < a->count; i++) {
-    LASSERT_TYPE("||", a, i, LVAL_NUM);
+    LASSERT_TYPE("||", a, i, LVAL_BOOL);
   }
   int r = 0;
   for (int i = 0; i < a->count; i++) {
@@ -100,7 +101,7 @@ lval* builtin_or(lenv* e, lval* a) {
     }
   }
   lval_del(a);
-  return lval_num(r);
+  return lval_bool(r);
 }
 
 lval* builtin_put(lenv* e, lval* a) {
@@ -309,7 +310,7 @@ lval* builtin_ord(lenv* e, lval* a, char* op) {
   lval_del(x);
   lval_del(y);
   lval_del(a);
-  return lval_num(r);
+  return lval_bool(r);
 }
 
 lval* builtin_not(lenv* e, lval* a) {
@@ -317,7 +318,7 @@ lval* builtin_not(lenv* e, lval* a) {
   LASSERT_TYPE("!", a, 1, LVAL_NUM);
   int r = !a->cell[0]->num;
   lval_del(a);
-  return lval_num(r);
+  return lval_bool(r);
 }
 
 lval* builtin_cmp(lenv* e, lval* a, char* op) {
@@ -330,5 +331,5 @@ lval* builtin_cmp(lenv* e, lval* a, char* op) {
     r = !lval_eq(a->cell[0], a->cell[1]);
   }
   lval_del(a);
-  return lval_num(r);
+  return lval_bool(r);
 }     

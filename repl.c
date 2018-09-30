@@ -17,6 +17,7 @@ long max(long x, long y) {
 int main(int argc, char** argv) {
   /* Create Some Parsers */
   mpc_parser_t* Number   = mpc_new("number");
+  mpc_parser_t* Boolean  = mpc_new("bool");
   mpc_parser_t* Symbol   = mpc_new("symbol");
   mpc_parser_t* Sexpr    = mpc_new("sexpr");
   mpc_parser_t* Qexpr    = mpc_new("qexpr");
@@ -27,13 +28,15 @@ int main(int argc, char** argv) {
   mpca_lang(MPCA_LANG_DEFAULT,
   "                                                     \
     number : /-?[0-9]+/ ;                               \
-    symbol : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&%|]+/ ;        \
+    bool   : /(true|false)/ ;                           \
+    symbol : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&%|]+/ ;       \
     sexpr  : '(' <expr>* ')' ;                          \
     qexpr  : '{' <expr>* '}' ;                          \
-    expr   : <number> | <symbol> | <sexpr> | <qexpr> ;  \
+    expr   : <number> | <bool> | <symbol>               \
+           | <sexpr> | <qexpr> ;                        \
     lispy  : /^/ <expr>* /$/ ;                          \
   ",
-  Number, Symbol, Sexpr, Qexpr, Expr, Lispy);
+  Number, Boolean, Symbol, Sexpr, Qexpr, Expr, Lispy);
 
 
   puts("Lisp Version 0.0.1");
@@ -70,6 +73,6 @@ int main(int argc, char** argv) {
   }
   lenv_del(e);
   /* Undefine and Delete our Parsers */
-  mpc_cleanup(6, Number, Symbol, Sexpr, Qexpr, Expr, Lispy);
+  mpc_cleanup(7, Number, Boolean, Symbol, Sexpr, Qexpr, Expr, Lispy);
   return 0;
 }

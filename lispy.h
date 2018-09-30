@@ -7,7 +7,8 @@ typedef struct lval lval;
 typedef struct lenv lenv;
 
 enum { LVAL_ERR, LVAL_NUM, LVAL_SYM,
-       LVAL_FUN, LVAL_SEXPR, LVAL_QEXPR };
+       LVAL_FUN, LVAL_SEXPR, LVAL_QEXPR,
+       LVAL_BOOL };
 
 enum { LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM };
 
@@ -77,6 +78,7 @@ void  lenv_put(lenv* e, lval* k, lval* v);
 char* ltype_name(int t);
 
 lval* lval_add(lval* v, lval* x);
+lval* lval_bool(int x);
 lval* lval_call(lenv* e, lval* f, lval* a);
 lval* lval_copy(lval* v);
 void  lval_del(lval* v);
