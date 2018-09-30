@@ -12,10 +12,10 @@ lval* builtin_var(lenv* e, lval* a, char* func) {
   }
 
   LASSERT(a, (syms->count == a->count - 1),
-         "Function '%s' passed too many arguments for symbols. Got %i, Expected %i",
-         func,
-         syms->count,
-         a->count - 1);
+          "Function '%s' passed too many arguments for symbols. Got %i, Expected %i",
+          func,
+          syms->count,
+          a->count - 1);
 
   for (int i = 0; i < syms->count; i++) {
     /* define 'def' globally */

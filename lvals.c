@@ -28,7 +28,7 @@ int lval_eq(lval* x, lval* y) {
       return x->builtin == y->builtin;
     } else {
       return lval_eq(x->formals, y->formals)
-	&& lval_eq(x->body, y->body);
+        && lval_eq(x->body, y->body);
     }
   case LVAL_QEXPR:
   case LVAL_SEXPR:
@@ -37,7 +37,7 @@ int lval_eq(lval* x, lval* y) {
     }
     for (int i = 0; i < x->count; i++) {
       if (!lval_eq(x->cell[i], y->cell[i])) {
-	return 0;
+        return 0;
       }
     }
     /* nothing was unequal */
@@ -149,7 +149,7 @@ lval* lval_call(lenv* e, lval* f, lval* a) {
     if (f->formals->count == 0) {
       lval_del(a);
       return lval_err("Function passed too many arguments. Got %i, Expected %i.",
-		      given, total);
+                      given, total);
     }
 
     /* pop first symbol from the formals */
@@ -158,9 +158,9 @@ lval* lval_call(lenv* e, lval* f, lval* a) {
     if (strcmp(syms->sym, "&") == 0) {
       /* ensure & is followed by another symbol */
       if (f->formals->count != 1) {
-	lval_del(a);
-	return lval_err("Function format invalid. "
-			"Symbol '&' not followed by a single symbol.");
+        lval_del(a);
+        return lval_err("Function format invalid. "
+                        "Symbol '&' not followed by a single symbol.");
       }
       /* next formal symbol should by bound to remaining arguments */
       lval* nsym = lval_pop(f->formals, 0);
@@ -190,7 +190,7 @@ lval* lval_call(lenv* e, lval* f, lval* a) {
 
     if (f->formals->count != 2) {
       return lval_err("Function format invalid. "
-		      "Symbol '&' not followed by a single symbol.");
+                      "Symbol '&' not followed by a single symbol.");
     }
 
     /* pop and delete '&' symbol */
@@ -214,7 +214,7 @@ lval* lval_call(lenv* e, lval* f, lval* a) {
 
     /* evaluate and return */
     return builtin_eval(f->env, lval_add(lval_sexpr(),
-					 lval_copy(f->body)));
+                                         lval_copy(f->body)));
   } else {
     /* otherwise return partially evaluated function */
     return lval_copy(f);
@@ -419,8 +419,8 @@ lval* lval_eval_sexpr(lenv* e, lval* v) {
   lval* f = lval_pop(v, 0);
   if (f->type != LVAL_FUN) {
     lval* err = lval_err("S-Expression starts with incorrect type. Got %s, Expected %s.",
-			 ltype_name(f->type),
-			 ltype_name(LVAL_FUN));
+                         ltype_name(f->type),
+                         ltype_name(LVAL_FUN));
     lval_del(f);
     lval_del(v);
     return err;

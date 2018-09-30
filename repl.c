@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
            | <sexpr> | <qexpr> ;                        \
     lispy  : /^/ <expr>* /$/ ;                          \
   ",
-  Number, Boolean, Symbol, Sexpr, Qexpr, Expr, Lispy);
+            Number, Boolean, Symbol, Sexpr, Qexpr, Expr, Lispy);
 
 
   puts("Lisp Version 0.0.1");
@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
       mpc_result_t r;
       if (mpc_parse("<stdin>", input, Lispy, &r)) {
 	/* On Success Print the AST
-	mpc_ast_print(r.output);
+           mpc_ast_print(r.output);
 	*/
 
 	lval* result = lval_eval(e, lval_read(r.output));
