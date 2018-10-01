@@ -190,35 +190,62 @@ lval* builtin_lte(lenv* e, lval* a) {
 }
 
 lval* builtin_head(lenv* e, lval* a) {
-  LASSERT(a, a->count == 1, "Function 'head' passed too many arguments. Got %i, Expected %i.", a->count, 1);
-  LASSERT(a, a->cell[0]->type == LVAL_QEXPR,
-	  "Function 'head' passed incorrect type. Got %s, Expected %s",
-	  ltype_name(a->cell[0]->type),
-	  ltype_name(LVAL_QEXPR));
-  LASSERT(a, a->cell[0]->count != 0, "Function 'head' passed {}");
-  /* take the first argument */
-  lval* v = lval_take(a, 0);
-  /* delete all the elements after the first */
-  while (v->count > 1) {
-    lval_del(lval_pop(v, 1));
+  LASSERT_NUM("head", a, 1);
+  lval* arg1 = a->cell[0];
+  LASSERT(a, (arg1->type == LVAL_QEXPR || arg1->type == LVAL_STR),
+	  "Function 'head' passed incorrect type. Got %s, Expected (%s OR %s)",
+	  ltype_name(arg1->type),
+	  ltype_name(LVAL_QEXPR),
+          ltype_name(LVAL_STR));
+  if (arg1->type == LVAL_QEXPR) {
+    LASSERT(a, arg1->count != 0, "Function 'head' passed {}");
+    /* take the first argument */
+    lval* v = lval_take(a, 0);
+    /* delete all the elements after the first */
+    while (v->count > 1) {
+      lval_del(lval_pop(v, 1));
+    }
+    return v;
+  } else if (arg1->type == LVAL_STR) {
+    LASSERT (a, (strlen(arg1->str) != 0),
+             "Function 'head' passed empty string");
+    char* first = malloc(sizeof(char) + 1);
+    first[0] = arg1->str[0];
+    first[1] = '\0';
+    lval_del(a);
+    return lval_str(first);
+  } else {
+    return lval_err("Function 'head' type not handled: %s", ltype_name(arg1->type));
   }
-  return v;
 }
 
 lval* builtin_tail(lenv* e, lval* a) {
-  LASSERT(a, a->count == 1, "Function 'tail' passed too many arguments. Got %i, Expected %i.", a->count, 1);
-  LASSERT(a, a->cell[0]->type == LVAL_QEXPR,
-	  "Function 'tail' passed incorrect type. Got %s, Expected %s",
+  LASSERT_NUM("tail", a, 1);
+  lval* arg1 = a->cell[0];
+  LASSERT(a, (arg1->type == LVAL_QEXPR || arg1->type == LVAL_STR),
+	  "Function 'tail' passed incorrect type. Got %s, Expected (%s OR %s)",
 	  ltype_name(a->cell[0]->type),
-	  ltype_name(LVAL_QEXPR));
-  LASSERT(a, a->cell[0]->count != 0, "Function 'tail' passed {}");
-
-  /* take the first argument */
-  lval* v = lval_take(a, 0);
-
-  /* delete the first element and return */
-  lval_del(lval_pop(v, 0));
-  return v;
+	  ltype_name(LVAL_QEXPR),
+          ltype_name(LVAL_STR));
+  if (arg1->type == LVAL_QEXPR) {
+    LASSERT(a, a->cell[0]->count != 0, "Function 'tail' passed {}");
+    /* take the first argument */
+    lval* v = lval_take(a, 0);
+    /* delete the first element and return */
+    lval_del(lval_pop(v, 0));
+    return v;
+  } else if (arg1->type == LVAL_STR) {
+    LASSERT (a, (strlen(arg1->str) != 0),
+             "Function 'head' passed empty string");
+    char* rest = malloc(sizeof(char) * strlen(arg1->str));
+    char* rp = arg1->str + (sizeof(char));
+    strcpy(rest, rp);
+    rest[strlen(rest)] = '\0';
+    lval_del(a);
+    return lval_str(rest);
+  } else {
+    return lval_err("Function 'tail' type not handled: %s", ltype_name(arg1->type));
+  }
 }
 
 lval* builtin_lambda(lenv* e, lval* a) {
@@ -244,8 +271,8 @@ lval* builtin_list(lenv* e, lval* a) {
 }
 
 lval* builtin_eval(lenv* e, lval* a) {
-  LASSERT(a, a->count == 1, "Function 'eval' passed too many arguments");
-  LASSERT(a, a->cell[0]->type == LVAL_QEXPR, "Function 'eval' passed incorrect type.");
+  LASSERT_NUM("eval", a, 1);
+  LASSERT_TYPE("eval", a, 0, LVAL_QEXPR);
 
   lval* x = lval_take(a, 0);
   x->type = LVAL_SEXPR;
@@ -253,9 +280,10 @@ lval* builtin_eval(lenv* e, lval* a) {
 }
 
 lval* builtin_join(lenv* e, lval* a) {
-
   for (int i = 0; i < a->count; i++) {
-    LASSERT(a, a->cell[i]->type == LVAL_QEXPR, "Function 'join' passed incorrect type.");
+    LASSERT(a, (a->cell[i]->type == LVAL_QEXPR || a->cell[i]->type == LVAL_STR),
+            "Function 'join' cannot operate on type: %s",
+            ltype_name(a->cell[i]->type));
   }
 
   lval* x = lval_pop(a, 0);

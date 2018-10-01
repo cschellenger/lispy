@@ -502,8 +502,23 @@ lval* lval_eval(lenv* e, lval* v) {
 
 lval* lval_join(lval* x, lval* y) {
   /* for each cell in 'y' add it to 'x' */
-  while (y->count) {
-    x = lval_add(x, lval_pop(y, 0));
+  if (x->type == LVAL_STR && y->type == LVAL_STR) {
+    int orig = strlen(x->str);
+    x->str = realloc(x->str, sizeof(char) * (orig + strlen(y->str) + 1));
+    char* ystart = x->str + (orig * sizeof(char));
+    strcpy(ystart, y->str);
+    x->str[strlen(x->str)] = '\0';
+  } else {
+    /* if both are not q-expressions, implicitly convert whichever is not */
+    if (x->type == LVAL_STR) {
+      x = lval_add(lval_qexpr(), x);
+    }
+    if (y->type == LVAL_STR) {
+      y = lval_add(lval_qexpr(), y);
+    }
+    while (y->count) {
+      x = lval_add(x, lval_pop(y, 0));
+    }
   }
   lval_del(y);
   return x;
