@@ -5,6 +5,7 @@ char* ltype_name(int t) {
   case LVAL_FUN:   return "Function";
   case LVAL_NUM:   return "Number";
   case LVAL_BOOL:  return "Boolean";
+  case LVAL_STR:   return "String";
   case LVAL_ERR:   return "Error";
   case LVAL_SYM:   return "Symbol";
   case LVAL_SEXPR: return "S-Expression";
@@ -22,6 +23,7 @@ int lval_eq(lval* x, lval* y) {
   case LVAL_BOOL:
   case LVAL_NUM: return x->num == y->num;
   case LVAL_ERR: return (strcmp(x->err, y->err) == 0);
+  case LVAL_STR: return (strcmp(x->str, y->str) == 0);
   case LVAL_SYM: return (strcmp(x->sym, y->sym) == 0);
   case LVAL_FUN:
     if (x->builtin || y->builtin) {
@@ -67,7 +69,6 @@ lval* lval_err(char* fmt, ...) {
 
   va_list va;
   va_start(va, fmt);
-
   
   v->err = malloc(512);
   vsnprintf(v->err, 511, fmt, va);
@@ -75,6 +76,14 @@ lval* lval_err(char* fmt, ...) {
 
   va_end(va);
 
+  return v;
+}
+
+lval* lval_str(char* s) {
+  lval* v = malloc(sizeof(lval));
+  v->type = LVAL_STR;
+  v->str = malloc(strlen(s) + 1);
+  strcpy(v->str, s);
   return v;
 }
 
@@ -113,10 +122,18 @@ void lval_del(lval* v) {
   switch (v->type) {
 
   case LVAL_BOOL:
-  case LVAL_NUM: break;
+  case LVAL_NUM:
+    break;
 
-  case LVAL_ERR: free(v->err); break;
-  case LVAL_SYM: free(v->sym); break;
+  case LVAL_ERR: free(v->err);
+    break;
+
+  case LVAL_SYM: free(v->sym);
+    break;
+
+  case LVAL_STR: free(v->str);
+    break;
+
   case LVAL_FUN:
     if (!v->builtin) {
       lenv_del(v->env);
@@ -237,6 +254,18 @@ lval* lval_read_bool(mpc_ast_t* t) {
   return lval_err("Unable to parse boolean value: %s", t->contents);
 }
 
+lval* lval_read_str(mpc_ast_t* t) {
+  /* replace the last quote with null terminator */
+  t->contents[strlen(t->contents) - 1] = '\0';
+  char* unescaped = malloc(strlen(t->contents + 1) + 1);
+  /* copy to unescaped, cutting off first quote */
+  strcpy(unescaped, t->contents + 1);
+  unescaped = mpcf_unescape(unescaped);
+  lval* str = lval_str(unescaped);
+  free(unescaped);
+  return str;
+}
+
 lval* lval_add(lval* v, lval* x) {
   v->count++;
   v->cell = realloc(v->cell, sizeof(lval*) * v->count);
@@ -264,6 +293,9 @@ lval* lval_read(mpc_ast_t* t) {
   }
   if (strstr(t->tag, "bool")) {
     return lval_read_bool(t);
+  }
+  if (strstr(t->tag, "string")) {
+    return lval_read_str(t);
   }
   if (strstr(t->tag, "symbol")) {
     return lval_sym(t->contents);
@@ -295,6 +327,9 @@ lval* lval_read(mpc_ast_t* t) {
     if (strcmp(t->children[i]->contents, "}") == 0) {
       continue;
     }
+    if (strstr(t->children[i]->tag, "comment")) {
+      continue;
+    }
     if (strcmp(t->children[i]->tag, "regex") == 0) {
       continue;
     }
@@ -314,14 +349,33 @@ void lval_expr_print(lval* v, char open, char close) {
   putchar(close);
 }
 
+void lval_print_str(lval* v) {
+  char* escaped = malloc(strlen(v->str) + 1);
+  strcpy(escaped, v->str);
+  escaped = mpcf_escape(escaped);
+  printf("\"%s\"", escaped);
+  free(escaped);
+}
+
 void lval_print(lval* v) {
   switch (v->type) {
-  case LVAL_NUM: printf("%li", v->num); break;
-  case LVAL_BOOL: printf("%s", v->num ? "true" : "false"); break;
-  case LVAL_ERR: printf("Error: %s", v->err); break;
-  case LVAL_SYM: printf("%s", v->sym); break;
-  case LVAL_SEXPR: lval_expr_print(v, '(', ')'); break;
-  case LVAL_QEXPR: lval_expr_print(v, '{', '}'); break;
+  case LVAL_NUM: printf("%li", v->num);
+    break;
+  case LVAL_BOOL: printf("%s", v->num ? "true" : "false");
+    break;
+  case LVAL_ERR: printf("Error: %s", v->err);
+    break;
+
+  case LVAL_SYM: printf("%s", v->sym);
+    break;
+
+  case LVAL_STR: lval_print_str(v);
+    break;
+
+  case LVAL_SEXPR: lval_expr_print(v, '(', ')');
+    break;
+  case LVAL_QEXPR: lval_expr_print(v, '{', '}');
+    break;
   case LVAL_FUN:
     if (v->builtin) {
       printf("<function>");
@@ -366,6 +420,11 @@ lval* lval_copy(lval* v) {
   case LVAL_SYM:
     x->sym = malloc(strlen(v->sym) + 1);
     strcpy(x->sym, v->sym);
+    break;
+
+  case LVAL_STR:
+    x->str = malloc(strlen(v->str) + 1);
+    strcpy(x->str, v->str);
     break;
 
   case LVAL_SEXPR:

@@ -8,11 +8,21 @@ typedef struct lenv lenv;
 
 enum { LVAL_ERR, LVAL_NUM, LVAL_SYM,
        LVAL_FUN, LVAL_SEXPR, LVAL_QEXPR,
-       LVAL_BOOL };
+       LVAL_BOOL, LVAL_STR };
 
 enum { LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM };
 
 typedef lval* (*lbuiltin)(lenv*, lval*);
+
+mpc_parser_t* Number;
+mpc_parser_t* Boolean;
+mpc_parser_t* String;
+mpc_parser_t* Comment;
+mpc_parser_t* Symbol;
+mpc_parser_t* Sexpr;
+mpc_parser_t* Qexpr;
+mpc_parser_t* Expr;
+mpc_parser_t* Lispy;
 
 struct lval {
   int type;
@@ -20,6 +30,7 @@ struct lval {
   long num;
   char* err;
   char* sym;
+  char* str;
   
   lbuiltin builtin;
   lenv* env;
@@ -52,6 +63,7 @@ lval* builtin_if(lenv* e, lval* a);
 lval* builtin_join(lenv* e, lval* a);
 lval* builtin_lambda(lenv* e, lval* a);
 lval* builtin_list(lenv* e, lval* a);
+lval* builtin_load(lenv* e, lval* a);
 lval* builtin_lt(lenv* e, lval* a);
 lval* builtin_lte(lenv* e, lval* a);
 lval* builtin_mod(lenv* e, lval* a);
@@ -93,11 +105,14 @@ lval* lval_lambda(lval* formals, lval* body);
 lval* lval_num(long x);
 lval* lval_pop(lval* v, int i);
 void  lval_print(lval* v);
+void  lval_print_str(lval* v);
 void  lval_println(lval* v);
 lval* lval_qexpr(void);
 lval* lval_read(mpc_ast_t* t);
 lval* lval_read_num(mpc_ast_t* t);
+lval* lval_read_str(mpc_ast_t* t);
 lval* lval_sexpr(void);
+lval* lval_str(char* s);
 lval* lval_sym(char* s);
 lval* lval_take(lval* v, int i);
 

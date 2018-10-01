@@ -79,6 +79,7 @@ void lenv_add_builtins(lenv* e) {
   lenv_add_builtin(e, "!",    builtin_not);
   lenv_add_builtin(e, "&&",   builtin_and);
   lenv_add_builtin(e, "||",   builtin_or);
+  lenv_add_builtin(e, "load", builtin_load);
 }
 
 void lenv_put(lenv* e, lval* k, lval* v) {
