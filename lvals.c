@@ -3,7 +3,8 @@
 char* ltype_name(int t) {
   switch (t) {
   case LVAL_FUN:   return "Function";
-  case LVAL_NUM:   return "Number";
+  case LVAL_INT:   return "Integer";
+  case LVAL_FLOAT: return "Float";
   case LVAL_BOOL:  return "Boolean";
   case LVAL_STR:   return "String";
   case LVAL_ERR:   return "Error";
@@ -14,14 +15,21 @@ char* ltype_name(int t) {
   }
 }
 
+int ltype_numeric(int t) {
+  return t == LVAL_INT || t == LVAL_FLOAT;
+}
+
 int lval_eq(lval* x, lval* y) {
   if (x->type != y->type) {
     return 0;
   }
 
+  /* Should we allow comparing int and float? */
   switch(x->type) {
   case LVAL_BOOL:
-  case LVAL_NUM: return x->num == y->num;
+  case LVAL_INT: return x->num == y->num;
+  /* Should we compare with epsilon? */
+  case LVAL_FLOAT: return x->fnum == y->fnum;
   case LVAL_ERR: return (strcmp(x->err, y->err) == 0);
   case LVAL_STR: return (strcmp(x->str, y->str) == 0);
   case LVAL_SYM: return (strcmp(x->sym, y->sym) == 0);
@@ -49,11 +57,36 @@ int lval_eq(lval* x, lval* y) {
   return 0;
 }
 
-lval* lval_num(long x) {
+lval* lval_int(long x) {
   lval* v = malloc(sizeof(lval));
-  v->type = LVAL_NUM;
+  v->type = LVAL_INT;
   v->num = x;
   return v;
+}
+
+lval* lval_int_to_float(lval* x) {
+  if (x->type == LVAL_FLOAT) {
+    return x;
+  }
+  x->type = LVAL_FLOAT;
+  x->fnum = (double) x->num;
+  return x;
+}
+
+lval* lval_float(double x) {
+  lval* v = malloc(sizeof(lval));
+  v->type = LVAL_FLOAT;
+  v->fnum = x;
+  return v;
+}
+
+lval* lval_float_to_int(lval* x) {
+  if (x->type == LVAL_INT) {
+    return x;
+  }
+  x->type = LVAL_INT;
+  x->num = (long) x->fnum;
+  return x;
 }
 
 lval* lval_bool(int b) {
@@ -122,7 +155,8 @@ void lval_del(lval* v) {
   switch (v->type) {
 
   case LVAL_BOOL:
-  case LVAL_NUM:
+  case LVAL_INT:
+  case LVAL_FLOAT:
     break;
 
   case LVAL_ERR: free(v->err);
@@ -149,6 +183,8 @@ void lval_del(lval* v) {
     }
     free(v->cell);
     break;
+
+  default: printf("Unexpected type\n");
   }
   free(v);
 }
@@ -238,10 +274,16 @@ lval* lval_call(lenv* e, lval* f, lval* a) {
   }
 }
 
-lval* lval_read_num(mpc_ast_t* t) {
+lval* lval_read_int(mpc_ast_t* t) {
   errno = 0;
   long x = strtol(t->contents, NULL, 10);
-  return errno != ERANGE ? lval_num(x) : lval_err("invalid number");
+  return errno != ERANGE ? lval_int(x) : lval_err("invalid integer");
+}
+
+lval* lval_read_float(mpc_ast_t* t) {
+  errno = 0;
+  double x = strtod(t->contents, NULL);
+  return errno != ERANGE ? lval_float(x) : lval_err("invalid float");
 }
 
 lval* lval_read_bool(mpc_ast_t* t) {
@@ -288,8 +330,11 @@ lval* lval_lambda(lval* formals, lval* body) {
 
 lval* lval_read(mpc_ast_t* t) {
   /* Handle symbols and numbers */
-  if (strstr(t->tag, "number")) {
-    return lval_read_num(t);
+  if (strstr(t->tag, "integer")) {
+    return lval_read_int(t);
+  }
+  if (strstr(t->tag, "float")) {
+    return lval_read_float(t);
   }
   if (strstr(t->tag, "bool")) {
     return lval_read_bool(t);
@@ -359,10 +404,15 @@ void lval_print_str(lval* v) {
 
 void lval_print(lval* v) {
   switch (v->type) {
-  case LVAL_NUM: printf("%li", v->num);
+  case LVAL_INT: printf("%li", v->num);
     break;
+
+  case LVAL_FLOAT: printf("%.3f", v->fnum);
+    break;
+
   case LVAL_BOOL: printf("%s", v->num ? "true" : "false");
     break;
+
   case LVAL_ERR: printf("Error: %s", v->err);
     break;
 
@@ -408,8 +458,12 @@ lval* lval_copy(lval* v) {
     break;
 
   case LVAL_BOOL:
-  case LVAL_NUM:
+  case LVAL_INT:
     x->num = v->num;
+    break;
+
+  case LVAL_FLOAT:
+    x->fnum = v->fnum;
     break;
     
   case LVAL_ERR:

@@ -294,10 +294,11 @@ lval* builtin_join(lenv* e, lval* a) {
   return x;
 }
 
+/* performs the provided operation against cells in the lval a */
 lval* builtin_op(lenv* e, lval* a, char* op) {
   /* all arguments must be numbers */
   for (int i = 0; i < a->count; i++) {
-    LASSERT(a, a->cell[i]->type == LVAL_NUM,
+    LASSERT(a, ltype_numeric(a->cell[i]->type),
 	    "Function %s passed incorrect type for argument %i",
 	    op, i);
   }
@@ -306,39 +307,73 @@ lval* builtin_op(lenv* e, lval* a, char* op) {
   lval* x = lval_pop(a, 0);
 
   if ((strcmp(op, "-") == 0) && a->count == 0) {
-    x->num = -x->num;
+    if (x->type == LVAL_INT) {
+      x->num = -x->num;
+    } else if (x->type == LVAL_FLOAT) {
+      x->fnum = -x->fnum;
+    }
   }
 
   while (a->count > 0) {
     lval* y = lval_pop(a, 0);
+    if (x->type != y->type) {
+      /* We must convert to the same type. Since one is a float, the end result
+       * must be a float as well.
+       */
+      x = lval_int_to_float(x);
+      y = lval_int_to_float(y);
+    }
     if (strcmp(op, "+") == 0) {
-      x->num += y->num;
+      if (x->type == LVAL_INT) {
+        x->num += y->num;
+      } else if (x->type == LVAL_FLOAT) {
+        x->fnum += y->fnum;
+      }
     }
     if (strcmp(op, "-") == 0) {
-      x->num -= y->num;
+      if (x->type == LVAL_INT) {
+        x->num -= y->num;
+      } else if (x->type == LVAL_FLOAT) {
+        x->fnum -= y->fnum;
+      }
     }
     if (strcmp(op, "*") == 0) {
-      x->num *= y->num;
+      if (x->type == LVAL_INT) {
+        x->num *= y->num;
+      } else if (x->type == LVAL_FLOAT) {
+        x->fnum *= y->fnum;
+      }
     }
     if (strcmp(op, "/") == 0) {
-      if (y->num == 0) {
+      if ((y->type == LVAL_INT && y->num == 0)
+          || (y->type == LVAL_INT && y->fnum == (double) 0.0)) {
 	lval_del(x);
 	lval_del(y);
 	x = lval_err("Division by zero");
 	break;
       }
-      x->num /= y->num;
+      if (x->type == LVAL_INT) {
+        x->num /= y->num;
+      } else if (y->type == LVAL_FLOAT) {
+        x->fnum /= y->fnum;
+      }
     }
     if (strcmp(op, "%") == 0) {
-      if (y->num == 0) {
+      if ((y->type == LVAL_INT && y->num == 0)
+          || (y->type == LVAL_FLOAT && y->fnum == (double) 0.0)) {
 	lval_del(x);
 	lval_del(y);
 	x = lval_err("Division by zero");
 	break;
       }
-      x->num %= y->num;
+      if (x->type == LVAL_INT) {
+        x->num %= y->num;
+      } else if (x->type == LVAL_FLOAT) {
+        lval_del(x);
+        lval_del(y);
+        x = lval_err("Cannot perform floating point modulus");
+      }
     }
-
     lval_del(y);
   }
   lval_del(a);
@@ -349,27 +384,52 @@ lval* builtin_ord(lenv* e, lval* a, char* op) {
   LASSERT_NUM(op, a, 2);
   /* all arguments must be numbers */
   for (int i = 0; i < a->count; i++) {
-    LASSERT(a, a->cell[i]->type == LVAL_NUM,
+    LASSERT(a, ltype_numeric(a->cell[i]->type),
 	    "Function %s passed incorrect type for argument %i",
 	    op, i);
   }
   int r;
   lval* x = lval_pop(a, 0);
   lval* y = lval_pop(a, 0);
+  if (x->type != y->type) {
+    /* type conversion required */
+    x = lval_int_to_float(x);
+    y = lval_int_to_float(y);
+  }
   if (strcmp(op, ">") == 0) {
-    r = x->num > y->num;
+    if (x->type == LVAL_INT) {
+      r = x->num > y->num;
+    } else {
+      r = x->fnum > y->fnum;
+    }
   }
   if (strcmp(op, "<") == 0) {
-    r = x->num < y->num;
+    if (x->type == LVAL_INT) {
+      r = x->num < y->num;
+    } else {
+      r = x->fnum < y->fnum;
+    }
   }
   if (strcmp(op, "==") == 0) {
-    r = x->num == y->num;
+    if (x->type == LVAL_INT) {
+      r = x->num == y->num;
+    } else {
+      r = x->fnum == y->fnum;
+    }
   }
   if (strcmp(op, ">=") == 0) {
-    r = x->num >= y->num;
+    if (x->type == LVAL_INT) {
+      r = x->num >= y->num;
+    } else {
+      r = x->fnum >= y->fnum;
+    }
   }
   if (strcmp(op, "<=") == 0) {
-    r = x->num <= y->num;
+    if (x->type == LVAL_INT) {
+      r = x->num <= y->num;
+    } else {
+      r = x->fnum <= y->fnum;
+    }
   }
 
   lval_del(x);
@@ -380,7 +440,7 @@ lval* builtin_ord(lenv* e, lval* a, char* op) {
 
 lval* builtin_not(lenv* e, lval* a) {
   LASSERT_NUM("!", a, 1);
-  LASSERT_TYPE("!", a, 1, LVAL_NUM);
+  LASSERT_TYPE("!", a, 1, LVAL_BOOL);
   int r = !a->cell[0]->num;
   lval_del(a);
   return lval_bool(r);

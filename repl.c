@@ -7,7 +7,8 @@
 
 int main(int argc, char** argv) {
   /* Create Some Parsers */
-  Number   = mpc_new("number");
+  Integer  = mpc_new("integer");
+  Float    = mpc_new("float");
   Boolean  = mpc_new("bool");
   String   = mpc_new("string");
   Comment  = mpc_new("comment");
@@ -20,23 +21,39 @@ int main(int argc, char** argv) {
   /* Define them with the following Language */
   mpca_lang(MPCA_LANG_DEFAULT, 
   "                                                      \
-    number  : /-?[0-9]+/ ;                               \
+    float   : /-?[0-9]*\\.[0-9]+/ ;                      \
+    integer : /-?[0-9]+/ ;                               \
     bool    : /(true|false)/ ;                           \
     string  : /\"(\\\\.|[^\"])*\"/ ;                     \
     comment : /;[^\\r\\n]*/ ;                            \
     symbol  : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&%|]+/ ;       \
     sexpr   : '(' <expr>* ')' ;                          \
     qexpr   : '{' <expr>* '}' ;                          \
-    expr    : <number> | <bool> | <string> | <comment>   \
-            | <symbol> | <sexpr> | <qexpr> ;             \
+    expr    : <float> | <integer> | <bool> | <string>    \
+            | <comment> | <symbol> | <sexpr> | <qexpr> ; \
     lispy   : /^/ <expr>* /$/ ;                          \
   ",
-            Number, Boolean, String, Comment,
+            Float, Integer, Boolean, String, Comment,
             Symbol, Sexpr, Qexpr, Expr, Lispy);
 
   lenv* e = lenv_new();
   lenv_add_builtins(e);
-
+  char* home = getenv("LISPY_HOME");
+  char stdlib_loc[1024];
+  if (home) {
+    printf("LISPY_HOME=%s\n", home);
+    strcpy(stdlib_loc, home);
+    strcat(stdlib_loc, "/stdlib.lsp");
+  } else {
+    printf("Unable to locate LISPY_HOME, defaulting to '.'\n");
+    strcpy(stdlib_loc, "./stdlib.lsp");
+  }
+  lval* args = lval_add(lval_sexpr(), lval_str(stdlib_loc));
+  lval* x = builtin_load(e, args);
+  if (x->type == LVAL_ERR) {
+    lval_println(x);
+  }
+  lval_del(x);
   if (argc >= 2) {
     for (int i = 1; i < argc; i++) {
       lval* args = lval_add(lval_sexpr(), lval_str(argv[i]));
@@ -45,18 +62,14 @@ int main(int argc, char** argv) {
       if (x->type == LVAL_ERR) {
         lval_println(x);
       }
-
-      lval_del(args);
+      /* args is already deleted by builtin_load */
       lval_del(x);
     }
   } else {
     puts("Lisp Version 0.0.1");
     puts("Press Ctrl+c to Exit\n");
-
     while (1) {
-
       char* input = readline("lisp> ");
-
       if (input && *input) {
         add_history(input);
         /* Attempt to Parse the user Input */
@@ -65,7 +78,6 @@ int main(int argc, char** argv) {
           /* On Success Print the AST
              mpc_ast_print(r.output);
           */
-
           lval* result = lval_eval(e, lval_read(r.output));
           lval_println(result);
           lval_del(result);
@@ -82,8 +94,8 @@ int main(int argc, char** argv) {
   }
   lenv_del(e);
   /* Undefine and Delete our Parsers */
-  mpc_cleanup(9,
-              Number, Boolean, String, Comment,
+  mpc_cleanup(10,
+              Integer, Float, Boolean, String, Comment,
               Symbol, Sexpr, Qexpr, Expr, Lispy);
   return 0;
 }
