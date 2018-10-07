@@ -38,6 +38,31 @@ lval* builtin_load(lenv* e, lval* a) {
   }
 }
 
+lval* builtin_defmacro(lenv* e, lval* a) {
+  LASSERT(a, (a->cell[0]->type == LVAL_SYM || a->cell[0]->type == LVAL_SEXPR),
+          "Function 'defmacro' takes symbol or s-expression. Got %s",
+          ltype_name(a->cell[0]->type));
+  LASSERT_NUM("defmacro", a, 2);
+  lval* sym = a->cell[0];
+  lval* macro = a->cell[1];
+
+  if (sym->type == LVAL_SYM) {
+    lenv_def(e, sym, macro);
+  } else {
+    for (int i = 0; i < sym->count; i++) {
+      LASSERT(a, (sym->cell[i]->type == LVAL_SYM),
+              "Function 'defmacro' cannot define non-symbol. Got %s, Expected %s",
+              ltype_name(sym->cell[i]->type),
+              ltype_name(LVAL_SYM));
+    }
+    lval* func_name = lval_pop(sym, 0);
+    lval* args = sym;
+    lenv_put(e, func_name, lval_lambda(args, macro));
+  }
+  lval_del(a);
+  return lval_sexpr();
+}
+
 lval* builtin_var(lenv* e, lval* a, char* func) {
   LASSERT_TYPE(func, a, 0, LVAL_QEXPR);
   lval* syms = a->cell[0];
@@ -60,12 +85,6 @@ lval* builtin_var(lenv* e, lval* a, char* func) {
     if (strcmp(func, "def") == 0) {
       lenv_def(e, syms->cell[i], a->cell[i + 1]);
     }
-    /* define 'defmacro' globally */
-    if (strcmp(func, "defmacro") == 0) {
-      lval* m = lval_sexpr();
-      lval_add(m, a->cell[i+1]);
-      lenv_def(e, syms->cell[i], m);
-    }
     if (strcmp(func, "=") == 0) {
       lenv_put(e, syms->cell[i], a->cell[i + 1]);
     }
@@ -76,10 +95,6 @@ lval* builtin_var(lenv* e, lval* a, char* func) {
 
 lval* builtin_def(lenv* e, lval* a) {
   return builtin_var(e, a, "def");
-}
-
-lval* builtin_defmacro(lenv* e, lval* a) {
-  return builtin_var(e, a, "defmacro");
 }
 
 lval* builtin_fun(lenv* e, lval* a) {
@@ -203,11 +218,9 @@ lval* builtin_lte(lenv* e, lval* a) {
 lval* builtin_head(lenv* e, lval* a) {
   LASSERT_NUM("head", a, 1);
   lval* arg1 = a->cell[0];
-  LASSERT(a, (arg1->type == LVAL_QEXPR || arg1->type == LVAL_STR),
-	  "Function 'head' passed incorrect type. Got %s, Expected (%s OR %s)",
-	  ltype_name(arg1->type),
-	  ltype_name(LVAL_QEXPR),
-          ltype_name(LVAL_STR));
+  LASSERT(a, ltype_expr_or_str(arg1->type),
+	  "Function 'head' passed incorrect type. Got %s, Expected string or expression.",
+	  ltype_name(arg1->type));
   if (arg1->type == LVAL_QEXPR) {
     LASSERT(a, arg1->count != 0, "Function 'head' passed {}");
     /* take the first argument */
@@ -233,11 +246,9 @@ lval* builtin_head(lenv* e, lval* a) {
 lval* builtin_tail(lenv* e, lval* a) {
   LASSERT_NUM("tail", a, 1);
   lval* arg1 = a->cell[0];
-  LASSERT(a, (arg1->type == LVAL_QEXPR || arg1->type == LVAL_STR),
-	  "Function 'tail' passed incorrect type. Got %s, Expected (%s OR %s)",
-	  ltype_name(a->cell[0]->type),
-	  ltype_name(LVAL_QEXPR),
-          ltype_name(LVAL_STR));
+  LASSERT(a, ltype_expr_or_str(arg1->type),
+	  "Function 'tail' passed incorrect type. Got %s, Expected string or expression",
+	  ltype_name(a->cell[0]->type));
   if (arg1->type == LVAL_QEXPR) {
     LASSERT(a, a->cell[0]->count != 0, "Function 'tail' passed {}");
     /* take the first argument */
@@ -283,7 +294,9 @@ lval* builtin_list(lenv* e, lval* a) {
 
 lval* builtin_eval(lenv* e, lval* a) {
   LASSERT_NUM("eval", a, 1);
-  LASSERT_TYPE("eval", a, 0, LVAL_QEXPR);
+  LASSERT(a, ltype_expr(a->cell[0]->type),
+          "Function 'eval' passed incorrect type. Got %s, expected expression",
+          ltype_name(a->cell[0]->type));
 
   lval* x = lval_take(a, 0);
   x->type = LVAL_SEXPR;

@@ -19,6 +19,14 @@ int ltype_numeric(int t) {
   return t == LVAL_INT || t == LVAL_FLOAT;
 }
 
+int ltype_expr(int t) {
+  return t == LVAL_SEXPR || t == LVAL_QEXPR;
+}
+
+int ltype_expr_or_str(int t) {
+  return t == LVAL_STR || ltype_expr(t);
+}
+
 int lval_eq(lval* x, lval* y) {
   if (x->type != y->type) {
     return 0;

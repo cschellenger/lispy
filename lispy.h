@@ -118,6 +118,8 @@ void  lenv_put(lenv* e, lval* k, lval* v);
 
 char* ltype_name(int t);
 int ltype_numeric(int t);
+int ltype_expr(int t);
+int ltype_expr_or_str(int t);
 
 lval* lval_add(lval* v, lval* x);
 lval* lval_bool(int x);
