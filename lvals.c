@@ -357,6 +357,10 @@ lval* lval_read(mpc_ast_t* t) {
   if (strstr(t->tag, "qexpr")) {
     x = lval_qexpr();
   }
+  if (strstr(t->tag, "list")) {
+    x = lval_sexpr();
+    x = lval_add(x, lval_fun(builtin_list));
+  }
 
   /* fill in sexpr / qexpr */
   for (int i = 0; i < t->children_num; i++) {
@@ -370,6 +374,12 @@ lval* lval_read(mpc_ast_t* t) {
       continue;
     }
     if (strcmp(t->children[i]->contents, "}") == 0) {
+      continue;
+    }
+    if (strcmp(t->children[i]->contents, "[") == 0) {
+      continue;
+    }
+    if (strcmp(t->children[i]->contents, "]") == 0) {
       continue;
     }
     if (strstr(t->children[i]->tag, "comment")) {

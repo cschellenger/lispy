@@ -15,6 +15,7 @@ int main(int argc, char** argv) {
   Symbol   = mpc_new("symbol");
   Sexpr    = mpc_new("sexpr");
   Qexpr    = mpc_new("qexpr");
+  List     = mpc_new("list");
   Expr     = mpc_new("expr");
   Lispy    = mpc_new("lispy");
 
@@ -29,12 +30,14 @@ int main(int argc, char** argv) {
     symbol  : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&%|]+/ ;       \
     sexpr   : '(' <expr>* ')' ;                          \
     qexpr   : '{' <expr>* '}' ;                          \
+    list    : '[' <expr>* ']' ;                          \
     expr    : <float> | <integer> | <bool> | <string>    \
-            | <comment> | <symbol> | <sexpr> | <qexpr> ; \
+            | <comment> | <symbol> | <sexpr> | <qexpr>   \
+            | <list> ;                                   \
     lispy   : /^/ <expr>* /$/ ;                          \
   ",
             Float, Integer, Boolean, String, Comment,
-            Symbol, Sexpr, Qexpr, Expr, Lispy);
+            Symbol, Sexpr, Qexpr, List, Expr, Lispy);
 
   lenv* e = lenv_new();
   lenv_add_builtins(e);
@@ -94,8 +97,8 @@ int main(int argc, char** argv) {
   }
   lenv_del(e);
   /* Undefine and Delete our Parsers */
-  mpc_cleanup(10,
+  mpc_cleanup(11,
               Integer, Float, Boolean, String, Comment,
-              Symbol, Sexpr, Qexpr, Expr, Lispy);
+              Symbol, Sexpr, Qexpr, List, Expr, Lispy);
   return 0;
 }
