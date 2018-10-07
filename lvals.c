@@ -522,8 +522,16 @@ lval* lval_take(lval* v, int i) {
 }
 
 lval* lval_eval_sexpr(lenv* e, lval* v) {
+  /* evaluate each cell in v */
   for (int i = 0; i < v->count; i++) {
+    int macro = 0;
+    if (v->cell[i]->type == LVAL_SYM) {
+      macro = (strcmp(v->cell[i]->sym, "defmacro") == 0);
+    }
     v->cell[i] = lval_eval(e, v->cell[i]);
+    if (macro) {
+      break;
+    }
   }
   
   for (int i = 0; i < v->count; i++) {
@@ -531,7 +539,6 @@ lval* lval_eval_sexpr(lenv* e, lval* v) {
       return lval_take(v, i);
     }
   }
-  
   if (v->count == 0) {
     return v;
   }  

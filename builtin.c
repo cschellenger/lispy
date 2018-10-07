@@ -1,3 +1,4 @@
+
 #include "lispy.h"
 
 lval* builtin_load(lenv* e, lval* a) {
@@ -59,6 +60,12 @@ lval* builtin_var(lenv* e, lval* a, char* func) {
     if (strcmp(func, "def") == 0) {
       lenv_def(e, syms->cell[i], a->cell[i + 1]);
     }
+    /* define 'defmacro' globally */
+    if (strcmp(func, "defmacro") == 0) {
+      lval* m = lval_sexpr();
+      lval_add(m, a->cell[i+1]);
+      lenv_def(e, syms->cell[i], m);
+    }
     if (strcmp(func, "=") == 0) {
       lenv_put(e, syms->cell[i], a->cell[i + 1]);
     }
@@ -69,6 +76,10 @@ lval* builtin_var(lenv* e, lval* a, char* func) {
 
 lval* builtin_def(lenv* e, lval* a) {
   return builtin_var(e, a, "def");
+}
+
+lval* builtin_defmacro(lenv* e, lval* a) {
+  return builtin_var(e, a, "defmacro");
 }
 
 lval* builtin_fun(lenv* e, lval* a) {

@@ -80,6 +80,7 @@ lval* builtin_add(lenv* e, lval* a);
 lval* builtin_and(lenv* e, lval* a);
 lval* builtin_cmp(lenv* e, lval* a, char* op);
 lval* builtin_def(lenv* e, lval* a);
+lval* builtin_defmacro(lenv* e, lval* a);
 lval* builtin_div(lenv* e, lval* a);
 lval* builtin_eq(lenv* e, lval* a);
 lval* builtin_eval(lenv* e, lval* a);

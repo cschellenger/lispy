@@ -55,31 +55,32 @@ void  lenv_add_builtin(lenv* e, char* name, lbuiltin func) {
 }
 
 void lenv_add_builtins(lenv* e) {
-  lenv_add_builtin(e, "list", builtin_list);
-  lenv_add_builtin(e, "head", builtin_head);
-  lenv_add_builtin(e, "tail", builtin_tail);
-  lenv_add_builtin(e, "eval", builtin_eval);
-  lenv_add_builtin(e, "join", builtin_join);
-  lenv_add_builtin(e, "def",  builtin_def);
-  lenv_add_builtin(e, "fun",  builtin_fun);
-  lenv_add_builtin(e, "\\",   builtin_lambda);
-  lenv_add_builtin(e, "=",    builtin_put);
-  lenv_add_builtin(e, "+",    builtin_add);
-  lenv_add_builtin(e, "-",    builtin_sub);
-  lenv_add_builtin(e, "*",    builtin_mul);
-  lenv_add_builtin(e, "/",    builtin_div);
-  lenv_add_builtin(e, "%",    builtin_mod);
-  lenv_add_builtin(e, "==",   builtin_eq);
-  lenv_add_builtin(e, "!=",   builtin_ne);
-  lenv_add_builtin(e, ">",    builtin_gt);
-  lenv_add_builtin(e, "<",    builtin_lt);
-  lenv_add_builtin(e, "<=",   builtin_lte);
-  lenv_add_builtin(e, ">=",   builtin_gte);
-  lenv_add_builtin(e, "if",   builtin_if);
-  lenv_add_builtin(e, "!",    builtin_not);
-  lenv_add_builtin(e, "&&",   builtin_and);
-  lenv_add_builtin(e, "||",   builtin_or);
-  lenv_add_builtin(e, "load", builtin_load);
+  lenv_add_builtin(e, "list",     builtin_list);
+  lenv_add_builtin(e, "head",     builtin_head);
+  lenv_add_builtin(e, "tail",     builtin_tail);
+  lenv_add_builtin(e, "eval",     builtin_eval);
+  lenv_add_builtin(e, "join",     builtin_join);
+  lenv_add_builtin(e, "def",      builtin_def);
+  lenv_add_builtin(e, "defmacro", builtin_defmacro);
+  lenv_add_builtin(e, "fun",      builtin_fun);
+  lenv_add_builtin(e, "\\",       builtin_lambda);
+  lenv_add_builtin(e, "=",        builtin_put);
+  lenv_add_builtin(e, "+",        builtin_add);
+  lenv_add_builtin(e, "-",        builtin_sub);
+  lenv_add_builtin(e, "*",        builtin_mul);
+  lenv_add_builtin(e, "/",        builtin_div);
+  lenv_add_builtin(e, "%",        builtin_mod);
+  lenv_add_builtin(e, "==",       builtin_eq);
+  lenv_add_builtin(e, "!=",       builtin_ne);
+  lenv_add_builtin(e, ">",        builtin_gt);
+  lenv_add_builtin(e, "<",        builtin_lt);
+  lenv_add_builtin(e, "<=",       builtin_lte);
+  lenv_add_builtin(e, ">=",       builtin_gte);
+  lenv_add_builtin(e, "if",       builtin_if);
+  lenv_add_builtin(e, "!",        builtin_not);
+  lenv_add_builtin(e, "&&",       builtin_and);
+  lenv_add_builtin(e, "||",       builtin_or);
+  lenv_add_builtin(e, "load",     builtin_load);
 }
 
 void lenv_put(lenv* e, lval* k, lval* v) {
