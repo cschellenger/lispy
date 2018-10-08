@@ -542,15 +542,24 @@ lval* lval_take(lval* v, int i) {
 
 lval* lval_eval_sexpr(lenv* e, lval* v) {
   /* evaluate each cell in v */
-  for (int i = 0; i < v->count; i++) {
-    int macro = 0;
+  int eval_count = v->count;
+  for (int i = 0; i < eval_count; i++) {
     if (v->cell[i]->type == LVAL_SYM) {
-      macro = (strcmp(v->cell[i]->sym, "defmacro") == 0);
+      /* check special symbols */
+      if (strcmp(v->cell[i]->sym, "defmacro") == 0) {
+        /* for macro definitions, we only want to evaluate the first term */
+        eval_count = 1;
+      }
+      if (strcmp(v->cell[i]->sym, "read") == 0) {
+        /* for read, we only want to evaluate the first term */
+        eval_count = 1;
+      }
+      if (strcmp(v->cell[i]->sym, "if") == 0) {
+        /* for if statements, we want to evaluate the 2nd term (the condition) */
+        eval_count = 2;
+      }
     }
     v->cell[i] = lval_eval(e, v->cell[i]);
-    if (macro) {
-      break;
-    }
   }
   
   for (int i = 0; i < v->count; i++) {

@@ -85,7 +85,6 @@ int main(int argc, char** argv) {
           lval_println(result);
           lval_del(result);
           mpc_ast_delete(r.output);
-	
         } else {
           /* Otherwise Print the Error */
           mpc_err_print(r.error);

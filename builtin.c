@@ -1,4 +1,4 @@
-
+#include <editline/readline.h>
 #include "lispy.h"
 
 lval* builtin_load(lenv* e, lval* a) {
@@ -38,6 +38,41 @@ lval* builtin_load(lenv* e, lval* a) {
   }
 }
 
+lval* builtin_parse(lenv* e, lval* a) {
+  LASSERT_NUM("parse", a, 1);
+  LASSERT_TYPE("parse", a, 0, LVAL_STR);
+  mpc_result_t r;
+  lval* res;
+  if (mpc_parse("<stdin>", a->cell[0]->str, Lispy, &r)) {
+    res = lval_read(r.output);
+    mpc_ast_delete(r.output);
+  } else {
+    res = lval_err("Unable to parse %s", a->cell[0]->str);
+    mpc_err_print(r.error);
+    mpc_err_delete(r.error);
+  }
+  lval_del(a);
+  return res;
+}
+
+lval* builtin_read(lenv* e, lval* a) {
+  LASSERT_TYPE("read", a, 0, LVAL_SYM);
+  lval* sym = a->cell[0];
+  char* prompt = malloc(sizeof(char) * (sizeof(sym) + 4));
+  sprintf(prompt, "%s > ", sym->sym);
+  char* input = readline(prompt);
+  lval* v;
+  if (input && *input) {
+    v = lval_str(input);
+    lenv_put(e, sym, v);
+  } else {
+    v = lval_err("Unable to read input for %s", sym->sym);
+  }
+  free(prompt);
+  lval_del(a);
+  return v;
+}
+
 lval* builtin_defmacro(lenv* e, lval* a) {
   LASSERT(a, (a->cell[0]->type == LVAL_SYM || a->cell[0]->type == LVAL_SEXPR),
           "Function 'defmacro' takes symbol or s-expression. Got %s",
@@ -57,7 +92,8 @@ lval* builtin_defmacro(lenv* e, lval* a) {
     }
     lval* func_name = lval_pop(sym, 0);
     lval* args = sym;
-    lenv_put(e, func_name, lval_lambda(args, macro));
+    lval* lambda = lval_lambda(args, macro);
+    lenv_put(e, func_name, lambda);
   }
   lval_del(a);
   return lval_ok();
@@ -129,9 +165,9 @@ lval* builtin_if(lenv* e, lval* a) {
   /* first arg must be condition */
   LASSERT_TYPE("if", a, 0, LVAL_BOOL);
   /* true branch */
-  LASSERT_TYPE("if", a, 1, LVAL_QEXPR);
+  LASSERT_TYPEF("if", a, 1, ltype_expr, "expression");
   /* false branch */
-  LASSERT_TYPE("if", a, 2, LVAL_QEXPR);
+  LASSERT_TYPEF("if", a, 2, ltype_expr, "expression");
   lval* x;
   a->cell[1]->type = LVAL_SEXPR;
   a->cell[2]->type = LVAL_SEXPR;

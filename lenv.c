@@ -64,6 +64,8 @@ void lenv_add_builtins(lenv* e) {
   lenv_add_builtin(e, "defmacro", builtin_defmacro);
   lenv_add_builtin(e, "error",    builtin_err);
   lenv_add_builtin(e, "fun",      builtin_fun);
+  lenv_add_builtin(e, "read",     builtin_read);
+  lenv_add_builtin(e, "parse",    builtin_parse);
   lenv_add_builtin(e, "\\",       builtin_lambda);
   lenv_add_builtin(e, "=",        builtin_put);
   lenv_add_builtin(e, "+",        builtin_add);
