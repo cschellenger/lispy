@@ -24,7 +24,7 @@ lval* builtin_load(lenv* e, lval* a) {
     lval_del(expr);
     lval_del(a);
     /* Return empty list */
-    return lval_sexpr();
+    return lval_ok();
   } else {
     /* Get Parse Error as String */
     char* err_msg = mpc_err_string(r.error);
@@ -60,7 +60,7 @@ lval* builtin_defmacro(lenv* e, lval* a) {
     lenv_put(e, func_name, lval_lambda(args, macro));
   }
   lval_del(a);
-  return lval_sexpr();
+  return lval_ok();
 }
 
 lval* builtin_var(lenv* e, lval* a, char* func) {
@@ -90,7 +90,7 @@ lval* builtin_var(lenv* e, lval* a, char* func) {
     }
   }
   lval_del(a);
-  return lval_sexpr();
+  return lval_ok();
 }
 
 lval* builtin_def(lenv* e, lval* a) {
@@ -113,7 +113,15 @@ lval* builtin_fun(lenv* e, lval* a) {
   lval* args = def;
   lenv_put(e, func_name, lval_lambda(args, body));
   lval_del(a);
-  return lval_sexpr();
+  return lval_ok();
+}
+
+lval* builtin_err(lenv* e, lval* a) {
+  LASSERT_TYPE("err", a, 0, LVAL_STR);
+  LASSERT_NUM("err", a, 1);
+  lval* err = lval_err(a->cell[0]->str);
+  lval_del(a);
+  return err;
 }
 
 lval* builtin_if(lenv* e, lval* a) {
@@ -272,8 +280,8 @@ lval* builtin_tail(lenv* e, lval* a) {
 
 lval* builtin_lambda(lenv* e, lval* a) {
   LASSERT_NUM("\\", a, 2);
-  LASSERT_TYPE("\\", a, 0, LVAL_QEXPR);
-  LASSERT_TYPE("\\", a, 1, LVAL_QEXPR);
+  LASSERT_TYPEF("\\", a, 0, ltype_expr, "expression");
+  LASSERT_TYPEF("\\", a, 1, ltype_expr, "expression");
 
   for (int i = 0; i < a->cell[0]->count; i++) {
     LASSERT(a, (a->cell[0]->cell[i]->type == LVAL_SYM),

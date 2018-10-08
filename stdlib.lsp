@@ -2,7 +2,7 @@
 ; Reverse a list
 (fun {reverse l} {
   if (== l nil)
-    {{}}
+    {nil}
     {join (reverse (tail l)) (head l)}
 })
 ; Unpack List for Function

@@ -8,6 +8,7 @@ typedef struct lenv lenv;
 
 enum {
       LVAL_ERR,
+      LVAL_OK,
       LVAL_INT,
       LVAL_FLOAT,
       LVAL_SYM,
@@ -21,6 +22,7 @@ enum {
 enum { LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM };
 
 typedef lval* (*lbuiltin)(lenv*, lval*);
+typedef int (*ltypef)(int);
 
 mpc_parser_t* Integer;
 mpc_parser_t* Float;
@@ -83,6 +85,7 @@ lval* builtin_def(lenv* e, lval* a);
 lval* builtin_defmacro(lenv* e, lval* a);
 lval* builtin_div(lenv* e, lval* a);
 lval* builtin_eq(lenv* e, lval* a);
+lval* builtin_err(lenv* e, lval* a);
 lval* builtin_eval(lenv* e, lval* a);
 lval* builtin_fun(lenv* e, lval* a);
 lval* builtin_gt(lenv* e, lval* a);
@@ -138,6 +141,7 @@ lval* lval_join(lval* x, lval* y);
 lval* lval_int(long x);
 lval* lval_int_to_float(lval* x);
 lval* lval_lambda(lval* formals, lval* body);
+lval* lval_ok(void);
 lval* lval_pop(lval* v, int i);
 void  lval_print(lval* v);
 void  lval_print_str(lval* v);
@@ -160,6 +164,12 @@ lval* lval_take(lval* v, int i);
     "Function '%s' passed incorrect type for argument %i. " \
     "Got %s, Expected %s.", \
     func, index, ltype_name(args->cell[index]->type), ltype_name(expect))
+
+#define LASSERT_TYPEF(func, args, index, expectf, expected)  \
+  LASSERT(args, expectf(args->cell[index]->type),           \
+    "Function '%s' passed incorrect type for argument %i. " \
+    "Got %s, Expected %s.", \
+    func, index, ltype_name(args->cell[index]->type), expected)
 
 #define LASSERT_NUM(func, args, num) \
   LASSERT(args, args->count == num, \

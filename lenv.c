@@ -62,6 +62,7 @@ void lenv_add_builtins(lenv* e) {
   lenv_add_builtin(e, "join",     builtin_join);
   lenv_add_builtin(e, "def",      builtin_def);
   lenv_add_builtin(e, "defmacro", builtin_defmacro);
+  lenv_add_builtin(e, "error",    builtin_err);
   lenv_add_builtin(e, "fun",      builtin_fun);
   lenv_add_builtin(e, "\\",       builtin_lambda);
   lenv_add_builtin(e, "=",        builtin_put);

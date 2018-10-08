@@ -8,6 +8,7 @@ char* ltype_name(int t) {
   case LVAL_BOOL:  return "Boolean";
   case LVAL_STR:   return "String";
   case LVAL_ERR:   return "Error";
+  case LVAL_OK:    return "OK";
   case LVAL_SYM:   return "Symbol";
   case LVAL_SEXPR: return "S-Expression";
   case LVAL_QEXPR: return "Q-Expression";
@@ -144,6 +145,12 @@ lval* lval_sexpr(void) {
   return v;
 }
 
+lval* lval_ok(void) {
+  lval* v = malloc(sizeof(lval));
+  v->type = LVAL_OK;
+  return v;
+}
+
 lval* lval_fun(lbuiltin func) {
   lval* v =  malloc(sizeof(lval));
   v->type = LVAL_FUN;
@@ -165,6 +172,7 @@ void lval_del(lval* v) {
   case LVAL_BOOL:
   case LVAL_INT:
   case LVAL_FLOAT:
+  case LVAL_OK:
     break;
 
   case LVAL_ERR: free(v->err);
@@ -432,6 +440,9 @@ void lval_print(lval* v) {
     break;
 
   case LVAL_ERR: printf("Error: %s", v->err);
+    break;
+
+  case LVAL_OK: printf("OK");
     break;
 
   case LVAL_SYM: printf("%s", v->sym);
